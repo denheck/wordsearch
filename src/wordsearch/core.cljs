@@ -7,10 +7,33 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 
-(defonce app-state (atom {:text "Hello world!"}))
+(defonce app-state 
+  (atom {
+    :title "Hello World"
+    :tiles [
+    [
+      { :letter "a", :in_words [] },
+      { :letter "b", :in_words [] },
+      { :letter "c", :in_words [] }
+    ],
+    [
+      { :letter "f", :in_words ["foo"] },
+      { :letter "o", :in_words ["foo"] },
+      { :letter "o", :in_words ["foo"] },
+    ],
+    [
+      { :letter "d", :in_words [] },
+      { :letter "e", :in_words [] },
+      { :letter "f", :in_words [] }
+    ]]}))
+
+(defn render-columns [columns] [:td]
+  (map (fn [column] [:td (:letter column)]) columns))
+
+(defn render-rows [rows]
+  (map (fn [columns] [:tr (render-columns columns)]) rows))
 
 (defn app []
-  ;;[:h1 (:text @app-state)])
   [:div.App
    [:div.App-header
     [:h2 "Welcome to Jub's Wordsearch!"]]
@@ -19,7 +42,10 @@
      [:li "foobar"]
      [:li "squanch"]]
     [:table
-     [:tbody]]]
+     [:tbody (let [rendered-rows (render-rows (:tiles @app-state))] 
+               (println rendered-rows)
+               rendered-rows)
+      ]]]
    [:div.App-footer "Here's my wordsearch"]])
 
 (reagent/render-component [app]

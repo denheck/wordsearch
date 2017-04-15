@@ -46,19 +46,20 @@
      [:li "foobar"]
      [:li "squanch"]]
     [:table
-     [:tbody (let [rendered-rows (render-rows (:tiles @app-state))] 
-               (println rendered-rows)
-               rendered-rows)
-      ]]]])
+     ;[:tbody (let [rendered-rows (render-rows (:tiles @app-state))] 
+     ;          (println rendered-rows)
+     ;          rendered-rows)
+      ]]])
 
 (reagent/render-component [app]
                           (. js/document (getElementById "app")))
 
-(def board-size 500)
-(def tile-size 50)
-(def lines (let [next-coordinate (range 0 (+ board-size tile-size) tile-size)] 
-             (concat (for [x next-coordinate] [x 0 x board-size]) 
-                     (for [y next-coordinate] [0 y board-size y]))))
+(def tiles 16) ; needs to have an integer square root
+(def board-width 500)
+(def tile-size (/ board-width (. js/Math (sqrt tiles))))
+(def lines (let [next-coordinate (range 0 (+ board-width tile-size) tile-size)] 
+             (concat (for [x next-coordinate] [x 0 x board-width])
+                     (for [y next-coordinate] [0 y board-width y]))))
 
 (defn draw-line [context from-x from-y to-x to-y]
   (. context (moveTo from-x from-y))

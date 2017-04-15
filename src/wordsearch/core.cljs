@@ -54,18 +54,32 @@
 (reagent/render-component [app]
                           (. js/document (getElementById "app")))
 
-(def tiles 16) ; needs to have an integer square root
+; MODEL
+(def num-tiles 16) ; needs to have an integer square root
+
+; VIEW
 (def board-width 500)
-(def tile-size (/ board-width (. js/Math (sqrt tiles))))
+(def tile-size (/ board-width (. js/Math (sqrt num-tiles))))
+(def tile-center-offset (/ tile-size 2))
 (def lines (let [next-coordinate (range 0 (+ board-width tile-size) tile-size)] 
              (concat (for [x next-coordinate] [x 0 x board-width])
                      (for [y next-coordinate] [0 y board-width y]))))
+(def tiles
+  (let [tile-centers-across 
+        (range tile-center-offset (+ board-width tile-center-offset) tile-size)]
+    (for [x tile-centers-across
+          y tile-centers-across]
+      {:x x :y y :letter "a"})))
 
 (defn draw-line [context from-x from-y to-x to-y]
   (. context (moveTo from-x from-y))
   (. context (lineTo to-x to-y))
   (set! (.-strokeStyle context) "black")
   (. context stroke))
+
+(defn draw-text [context text x y]
+  (set! (.-font context) "20px serif")
+  (. context (fillText text x y)))
 
 (defn draw-board []
   (let [canvas (. js/document (getElementById "board"))
@@ -74,7 +88,12 @@
            lines (rest lines)]
       (apply draw-line context line)
       (if-not (empty? lines)
-        (recur (first lines) (rest lines))))))
+        (recur (first lines) (rest lines))))
+    (loop [{:keys [letter x y]} (first tiles)
+           tiles (rest tiles)]
+      (draw-text context letter x y)
+      (if-not (empty? tiles)
+        (recur (first tiles) (rest tiles))))))
 
 (draw-board)
 

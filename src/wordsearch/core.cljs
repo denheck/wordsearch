@@ -49,23 +49,16 @@
      [:tbody (let [rendered-rows (render-rows (:tiles @app-state))] 
                (println rendered-rows)
                rendered-rows)
-      ]]]
-   [:div.App-footer "Here's my wordsearch"]])
+      ]]]])
 
 (reagent/render-component [app]
                           (. js/document (getElementById "app")))
 
 (def board-size 500)
-(def tile-size 25)
-;(def lines [[0 25 25 25] 
-;            [0 50 25 50]
-;            [0 75 25 75]
-;            [25 0 25 25]
-;            [50 0 50 25]
-;            [75 0 75 25]])
-(def lines (concat (for [x (range 0 board-size tile-size)] [x 0 x board-size])
-                   (for [y (range 0 board-size tile-size)] [0 y board-size y])))
-             
+(def tile-size 50)
+(def lines (let [next-coordinate (range 0 (+ board-size tile-size) tile-size)] 
+             (concat (for [x next-coordinate] [x 0 x board-size]) 
+                     (for [y next-coordinate] [0 y board-size y]))))
 
 (defn draw-line [context from-x from-y to-x to-y]
   (. context (moveTo from-x from-y))
@@ -87,5 +80,5 @@
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
+  ;; (swap! app-state update-in [:__figwheel_counte] inc)
 )

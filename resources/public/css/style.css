@@ -27,3 +27,16 @@ body {
 .App-footer {
         background-color: #673888;
 }
+
+.App-grid-item {
+        background-color: #c79dd7;
+        width: 25px;
+        height: 25px;
+        padding: 15px 15px;
+        font-size: 30px;
+}
+
+.pressed-grid-item {
+        background-color: #ccc;
+}
+  

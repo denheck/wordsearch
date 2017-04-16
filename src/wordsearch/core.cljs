@@ -48,9 +48,6 @@
 (def board-width 500)
 (def tile-size (/ board-width (. js/Math (sqrt num-tiles))))
 (def tile-center-offset (/ tile-size 2))
-(def lines (let [next-coordinate (range 0 (+ board-width tile-size) tile-size)] 
-             (concat (for [x next-coordinate] [x 0 x board-width])
-                     (for [y next-coordinate] [0 y board-width y]))))
 (def tiles
   (let [tile-centers-across 
         (range tile-center-offset (+ board-width tile-center-offset) tile-size)]
@@ -59,30 +56,46 @@
       {:x x :y y :letter "a"})))
 
 (defn draw-line [context from-x from-y to-x to-y]
+  (. context beginPath)
+  (set! (.-strokeStyle context) "black")
   (. context (moveTo from-x from-y))
   (. context (lineTo to-x to-y))
   (. context stroke))
 
 (defn draw-text [context text x y]
+  (set! (.-font context) (str font-size "px serif"))
   (. context (fillText text x y)))
 
-(defn draw-board []
-  (let [canvas (. js/document (getElementById "board"))
-        context (. canvas getContext "2d")]
-    (set! (.-font context) (str font-size "px serif"))
-    (set! (.-strokeStyle context) "black")
-    (loop [line (first lines)
-           lines (rest lines)]
-      (apply draw-line context line)
-      (if-not (empty? lines)
-        (recur (first lines) (rest lines))))
-    (loop [{:keys [letter x y]} (first tiles)
-           tiles (rest tiles)]
-      (draw-text context letter (- x (/ font-size 4)) (+ y (/ font-size 4)))
-      (if-not (empty? tiles)
-        (recur (first tiles) (rest tiles))))))
+(defn draw [canvas context state] 
+  (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
+  (doseq [{:keys [letter x y]} tiles]
+    (draw-text context letter (- x (/ font-size 4)) (+ y (/ font-size 4))))
+  (if-not (or (empty? (:line-start state)) (empty? (:line-end state)))
+    (apply draw-line context (concat (:line-start state) (:line-end state)))))
 
-(draw-board)
+(defn mouse-position 
+  "get mouse position coordinates on canvas"
+  [canvas event]
+  [(- (.-pageX event) (.-offsetLeft canvas)) (- (.-pageY event) (.-offsetTop canvas))])
+
+(let [canvas (. js/document (getElementById "board"))
+      context (. canvas getContext "2d")
+      state (atom {:line-start []
+                   :line-end []})]
+  (set! (.-onmousedown canvas) 
+        (fn [event] 
+          (swap! state 
+                (fn [state] 
+                  (let [coordinates (mouse-position canvas event)]
+                    (assoc state :line-start coordinates :line-end coordinates))))))
+  (set! (.-onmouseup canvas) (fn [event] (swap! state #(assoc % :line-start [] :line-end []))))
+  (set! (.-onmousemove canvas) 
+        (fn [event] 
+          (swap! state
+                 (fn [state] 
+                   (assoc state :line-end (mouse-position canvas event))))
+          (draw canvas context @state)))
+  (draw canvas context @state))
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on

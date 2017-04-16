@@ -61,16 +61,16 @@
 (defn draw-line [context from-x from-y to-x to-y]
   (. context (moveTo from-x from-y))
   (. context (lineTo to-x to-y))
-  (set! (.-strokeStyle context) "black")
   (. context stroke))
 
 (defn draw-text [context text x y]
-  (set! (.-font context) (str font-size "px serif"))
   (. context (fillText text x y)))
 
 (defn draw-board []
   (let [canvas (. js/document (getElementById "board"))
         context (. canvas getContext "2d")]
+    (set! (.-font context) (str font-size "px serif"))
+    (set! (.-strokeStyle context) "black")
     (loop [line (first lines)
            lines (rest lines)]
       (apply draw-line context line)

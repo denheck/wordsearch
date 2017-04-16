@@ -27,16 +27,6 @@
       { :letter "f" :in_words [] :pressed true }
     ]]}))
 
-(defn render-tiles [tiles] [:td]
-  (map (fn [tile] 
-         [(if (:pressed tile) 
-            :td.App-grid-item.pressed-grid-item 
-            :td.App-grid-item.unpressed-grid-item) 
-          (:letter tile)]) tiles))
-
-(defn render-rows [rows]
-  (map (fn [tiles] [:tr (render-tiles tiles)]) rows))
-
 (defn app []
   [:div.App
    [:div.App-header
@@ -45,19 +35,16 @@
     [:ul
      [:li "foobar"]
      [:li "squanch"]]
-    [:table
-     ;[:tbody (let [rendered-rows (render-rows (:tiles @app-state))] 
-     ;          (println rendered-rows)
-     ;          rendered-rows)
-      ]]])
+    [:table]]])
 
 (reagent/render-component [app]
                           (. js/document (getElementById "app")))
 
 ; MODEL
-(def num-tiles 16) ; needs to have an integer square root
+(def num-tiles 25) ; needs to have an integer square root
 
 ; VIEW
+(def font-size 60)
 (def board-width 500)
 (def tile-size (/ board-width (. js/Math (sqrt num-tiles))))
 (def tile-center-offset (/ tile-size 2))
@@ -78,7 +65,7 @@
   (. context stroke))
 
 (defn draw-text [context text x y]
-  (set! (.-font context) "20px serif")
+  (set! (.-font context) (str font-size "px serif"))
   (. context (fillText text x y)))
 
 (defn draw-board []
@@ -91,7 +78,7 @@
         (recur (first lines) (rest lines))))
     (loop [{:keys [letter x y]} (first tiles)
            tiles (rest tiles)]
-      (draw-text context letter x y)
+      (draw-text context letter (- x (/ font-size 4)) (+ y (/ font-size 4)))
       (if-not (empty? tiles)
         (recur (first tiles) (rest tiles))))))
 

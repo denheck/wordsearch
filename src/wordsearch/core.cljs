@@ -42,9 +42,9 @@
 
 ; MODEL
 (def tiles 
-  [{ :x 0 :y 0 :letter "a"}
-   { :x 1 :y 0 :letter "b"}
-   { :x 2 :y 0 :letter "c"}
+  [{ :x 0 :y 0 :letter "f"}
+   { :x 1 :y 0 :letter "o"}
+   { :x 2 :y 0 :letter "o"}
    { :x 0 :y 1 :letter "d"}
    { :x 1 :y 1 :letter "e"}
    { :x 2 :y 1 :letter "f"}
@@ -55,12 +55,10 @@
 ; VIEW
 (def font-size 60)
 (def board-width 500)
-(def tile-size (/ board-width (. js/Math (sqrt (count tiles)))))
-(def tile-center-offset (/ tile-size 2))
-(def tile-centers 
-  (let [tile-centers-across 
-        ; TODO: fix some tiles are out of range
-        (range tile-center-offset board-width tile-size)]
+(defn tile-centers [tiles]
+  (let [tile-size(/ board-width (. js/Math (sqrt (count tiles))))
+        tile-center-offset (/ tile-size 2)
+        tile-centers-across (range tile-center-offset board-width tile-size)]
     (for [x tile-centers-across
           y tile-centers-across]
       [x y])))
@@ -80,7 +78,7 @@
   (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
   (doseq [{:keys [letter letter-x letter-y]} 
           (map (fn [tile [letter-x letter-y]] 
-                 (assoc tile :letter-x letter-x :letter-y letter-y)) tiles tile-centers)]
+                 (assoc tile :letter-x letter-x :letter-y letter-y)) tiles (tile-centers tiles))]
     (draw-text context letter (- letter-x (/ font-size 4)) (+ letter-y (/ font-size 4))))
   (if-not (or (empty? (:line-start state)) (empty? (:line-end state)))
     (apply draw-line context (concat (:line-start state) (:line-end state)))))

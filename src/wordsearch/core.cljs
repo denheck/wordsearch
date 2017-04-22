@@ -55,8 +55,18 @@
 ; VIEW
 (def font-size 60)
 (def board-width 500)
+; TODO: use for detecting if user's drawn line is across a word (bounding box algorithm)
+(defn tile-positions [tiles]
+  "Calculate the positional coordinates for each tile on the board"
+  (let [tile-size (/ board-width (. js/Math (sqrt (count tiles))))
+        tile-positions-across (range 0 board-width tile-size)]
+    (for [x tile-positions-across
+          y tile-positions-across]
+      [x y])))
+
+; TODO: remove once using tile-positions
 (defn tile-centers [tiles]
-  (let [tile-size(/ board-width (. js/Math (sqrt (count tiles))))
+  (let [tile-size (/ board-width (. js/Math (sqrt (count tiles))))
         tile-center-offset (/ tile-size 2)
         tile-centers-across (range tile-center-offset board-width tile-size)]
     (for [x tile-centers-across
@@ -90,8 +100,8 @@
       context (. canvas getContext "2d")
       state (atom {:line-start []
                    :line-end []
-                   :tiles (map (fn [tile [letter-x letter-y]] 
-                                 (assoc tile :letter-x letter-x :letter-y letter-y)) tiles (tile-centers tiles))})]
+                   :tiles (map (fn [tile [letter-x letter-y] [position-x position-y]] 
+                                 (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y)) tiles (tile-centers tiles) (tile-positions tiles))})]
   (set! (.-onmousedown canvas) 
         (fn [event] 
           (swap! state 

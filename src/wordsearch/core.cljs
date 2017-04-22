@@ -76,9 +76,7 @@
 
 (defn draw [canvas context state] 
   (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
-  (doseq [{:keys [letter letter-x letter-y]} 
-          (map (fn [tile [letter-x letter-y]] 
-                 (assoc tile :letter-x letter-x :letter-y letter-y)) tiles (tile-centers tiles))]
+  (doseq [{:keys [letter letter-x letter-y]} (:tiles state)]
     (draw-text context letter (- letter-x (/ font-size 4)) (+ letter-y (/ font-size 4))))
   (if-not (or (empty? (:line-start state)) (empty? (:line-end state)))
     (apply draw-line context (concat (:line-start state) (:line-end state)))))
@@ -91,7 +89,9 @@
 (let [canvas (. js/document (getElementById "board"))
       context (. canvas getContext "2d")
       state (atom {:line-start []
-                   :line-end []})]
+                   :line-end []
+                   :tiles (map (fn [tile [letter-x letter-y]] 
+                                 (assoc tile :letter-x letter-x :letter-y letter-y)) tiles (tile-centers tiles))})]
   (set! (.-onmousedown canvas) 
         (fn [event] 
           (swap! state 

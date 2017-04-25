@@ -8,24 +8,7 @@
 ;; define your app data so that it doesn't get over-written on reload
 
 (defonce app-state 
-  (atom {
-    :title "Hello World"
-    :tiles [
-    [
-      { :letter "a" :in_words [] :pressed true }
-      { :letter "b" :in_words [] }
-      { :letter "c" :in_words [] }
-    ]
-    [
-      { :letter "f" :in_words ["foo"] }
-      { :letter "o" :in_words ["foo"] }
-      { :letter "o" :in_words ["foo"] }
-    ]
-    [
-      { :letter "d" :in_words [] }
-      { :letter "e" :in_words [] }
-      { :letter "f" :in_words [] :pressed true }
-    ]]}))
+  (atom { :title "Hello World" }))
 
 (defn app []
   [:div.App
@@ -41,37 +24,20 @@
                           (. js/document (getElementById "app")))
 
 ; MODEL
+
+(def words {:w1 {:word "fo" :found? false}})
+
 (def tiles 
-  [{ :x 0 :y 0 :letter "f"}
-   { :x 1 :y 0 :letter "o"}
-   { :x 2 :y 0 :letter "o"}
+  [{ :x 0 :y 0 :letter "f" :word-start :w1}
+   { :x 1 :y 0 :letter "o" :word-end :w1}
    { :x 0 :y 1 :letter "d"}
-   { :x 1 :y 1 :letter "e"}
-   { :x 2 :y 1 :letter "f"}
-   { :x 0 :y 2 :letter "g"}
-   { :x 1 :y 2 :letter "h"}
-   { :x 2 :y 2 :letter "i"}]) 
+   { :x 1 :y 1 :letter "e"}])
 
 ; VIEW
 (def font-size 60)
 (def board-width 500)
-; TODO: use for detecting if user's drawn line is across a word (bounding box algorithm)
-(defn tile-positions [tiles]
-  "Calculate the positional coordinates for each tile on the board"
-  (let [tile-size (/ board-width (. js/Math (sqrt (count tiles))))
-        tile-positions-across (range 0 board-width tile-size)]
-    (for [x tile-positions-across
-          y tile-positions-across]
-      [x y])))
 
-; TODO: remove once using tile-positions
-(defn tile-centers [tiles]
-  (let [tile-size (/ board-width (. js/Math (sqrt (count tiles))))
-        tile-center-offset (/ tile-size 2)
-        tile-centers-across (range tile-center-offset board-width tile-size)]
-    (for [x tile-centers-across
-          y tile-centers-across]
-      [x y])))
+(defn tile-width [tiles] (/ board-width (. js/Math (sqrt (count tiles)))))
 
 (defn draw-line [context from-x from-y to-x to-y]
   (. context beginPath)
@@ -96,19 +62,59 @@
   [canvas event]
   [(- (.-pageX event) (.-offsetLeft canvas)) (- (.-pageY event) (.-offsetTop canvas))])
 
+(defn find-tile [x y tiles]
+  (reduce (fn [found-tile tile]
+            (let [position-x (:position-x tile)
+                  position-y (:position-y tile)
+                  tile-size (tile-width tiles)]
+              ; TODO: this is incorrectly finding the start tile
+              (println (and (<= position-x x (+ position-x tile-size)) (<= position-y y (+ position-y tile-size))))
+              (if (and (<= position-x x (+ position-x tile-size)) (<= position-y y (+ position-y tile-size))) (reduced tile) nil))) tiles))
+
+(defn find-word [[start-x start-y] [end-x end-y] tiles]
+  "Find word key by positions of start and end of line on board"
+  (let [word-start (:word-start (find-tile start-x start-y tiles))
+        ;word-end (:word-end (find-tile end-x end-y tiles))]
+        word-end nil]
+    ;; TODO: looks like model X Y coordinates may not be properly translating to Board X Y
+    (println (find-tile start-x start-y tiles))
+    (if (= word-start word-end) word-start nil)))
+
+(defn mark-found [word words] words)
+
+; TODO: not sure if this is working (NOT NEEDED MAYBE)
+(defn sort-tiles [tiles]
+  (sort-by (fn [{ :keys [x y] } tile] (+ x (* y 10))) tiles))
+
 (let [canvas (. js/document (getElementById "board"))
       context (. canvas getContext "2d")
       state (atom {:line-start []
                    :line-end []
-                   :tiles (map (fn [tile [letter-x letter-y] [position-x position-y]] 
-                                 (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y)) tiles (tile-centers tiles) (tile-positions tiles))})]
+                   :words words
+                   ; Add board position and letter position of tiles
+                   :tiles (map (fn [tile [letter-x letter-y]]
+                                 (let [{:keys [x y]} tile
+                                       tile-size (tile-width tiles)
+                                       position-x (* x tile-size)
+                                       position-y (* y tile-size)
+                                       tile-center-offset (/ tile-size 2)
+                                       letter-x (+ position-x tile-center-offset)
+                                       letter-y (+ position-y tile-center-offset)]
+                                   (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) tiles)})]
+  (println (:tiles @state))
   (set! (.-onmousedown canvas) 
         (fn [event] 
           (swap! state 
                 (fn [state] 
                   (let [coordinates (mouse-position canvas event)]
                     (assoc state :line-start coordinates :line-end coordinates))))))
-  (set! (.-onmouseup canvas) (fn [event] (swap! state #(assoc % :line-start [] :line-end []))))
+  (set! (.-onmouseup canvas)
+        (fn [event]
+          (swap! state
+                 (fn [current-state]
+                   (let [{:keys [words line-start line-end tiles]} current-state
+                         word (find-word line-start line-end tiles)]
+                     (assoc current-state :line-start [] :line-end [] :words (mark-found word words)))))))
   (set! (.-onmousemove canvas) 
         (fn [event] 
           (swap! state

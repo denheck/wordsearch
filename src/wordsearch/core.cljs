@@ -24,16 +24,20 @@
                           (. js/document (getElementById "app")))
 
 ; MODEL
-(def words [{:text "fo" :at nil}])
+(def words [{:text "fez" :at nil}])
 
 (def tiles 
   [{ :x 0 :y 0 :letter "f"}
    { :x 1 :y 0 :letter "o"}
+   { :x 2 :y 0 :letter "o"}
    { :x 0 :y 1 :letter "d"}
-   { :x 1 :y 1 :letter "e"}])
+   { :x 1 :y 1 :letter "e"}
+   { :x 2 :y 1 :letter "x"}
+   { :x 0 :y 2 :letter "t"}
+   { :x 1 :y 2 :letter "f"}
+   { :x 2 :y 2 :letter "z"}])
 
 ; VIEW
-(def font-size 60)
 (def board-width 500)
 
 (defn tile-width [tiles] (/ board-width (. js/Math (sqrt (count tiles)))))
@@ -45,14 +49,24 @@
   (. context (lineTo to-x to-y))
   (. context stroke))
 
-(defn draw-text [context text x y]
+(defn draw-text [context text x y font-size]
   (set! (.-font context) (str font-size "px serif"))
   (. context (fillText text x y)))
 
 (defn draw [canvas context state] 
   (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
-  (doseq [{:keys [letter letter-x letter-y]} (:tiles state)]
-    (draw-text context letter (- letter-x (/ font-size 4)) (+ letter-y (/ font-size 4))))
+  (let [word-table-padding 5
+        word-table-top-offset 50
+        word-table-font-size (:word-table-font-size state)
+        word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count words)) word-table-padding)) word-table-font-size)
+        words (:words state)
+        tile-font-size (:tile-font-size state)
+        draw-text-args (concat 
+                         (map (fn [{:keys [letter letter-x letter-y]}] [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
+                         (map (fn [{:keys [text]} text-y] [context text (+ word-table-padding board-width) text-y word-table-font-size]) words word-table-ys))] 
+    (println word-table-ys)
+    (doseq [args draw-text-args] 
+      (apply draw-text args)))
   (let [line-start (:line-start state)
         line-end (:line-end state)
         lines (concat (if (or (empty? line-start) (empty? line-end)) [] [[line-start line-end]]) (filter some? (map :at (:words state))))] 
@@ -102,6 +116,9 @@
       state (atom {:line-start []
                    :line-end []
                    :words words
+                   :word-table-width 200 ; TODO: should be adjustable based on board dimensions
+                   :word-table-font-size 25
+                   :tile-font-size 60
                    ; Add board position and letter position of tiles
                    :tiles (map (fn [tile [letter-x letter-y]]
                                  (let [{:keys [x y]} tile
@@ -125,7 +142,7 @@
                    (let [{:keys [words line-start line-end tiles]} current-state
                          word {:text (find-word line-start line-end tiles) :at [line-start line-end]}
                          reversed-word {:text (reduce str (reverse (:text word))) :at [line-end line-start]}]
-                     (println (:words current-state))
+                     ; TODO: may want to ensure words can only be found if they are horizontal, vertical or diagonal
                      (assoc current-state :line-start [] :line-end [] :words (mark-found word (mark-found reversed-word words))))))))
   (set! (.-onmousemove canvas) 
         (fn [event] 

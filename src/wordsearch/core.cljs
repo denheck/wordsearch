@@ -53,8 +53,11 @@
   (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
   (doseq [{:keys [letter letter-x letter-y]} (:tiles state)]
     (draw-text context letter (- letter-x (/ font-size 4)) (+ letter-y (/ font-size 4))))
-  (if-not (or (empty? (:line-start state)) (empty? (:line-end state)))
-    (apply draw-line context (concat (:line-start state) (:line-end state)))))
+  (let [line-start (:line-start state)
+        line-end (:line-end state)
+        lines (concat (if (or (empty? line-start) (empty? line-end)) [] [[line-start line-end]]) (filter some? (map :at (:words state))))] 
+    (doseq [[[from-x from-y] [to-x to-y]] lines] 
+      (draw-line context from-x from-y to-x to-y))))
 
 (defn mouse-position 
   "get mouse position coordinates on canvas"
@@ -93,10 +96,6 @@
 
 (defn mark-found [found-word words] 
   (map (fn [word] (if (= (:text found-word) (:text word)) found-word word)) words))
-
-; TODO: not sure if this is working (NOT NEEDED MAYBE)
-(defn sort-tiles [tiles]
-  (sort-by (fn [{ :keys [x y] } tile] (+ x (* y 10))) tiles))
 
 (let [canvas (. js/document (getElementById "board"))
       context (. canvas getContext "2d")

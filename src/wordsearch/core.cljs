@@ -27,8 +27,8 @@
 (def words [{:text "fo" :at nil}])
 
 (def tiles 
-  [{ :x 0 :y 0 :letter "f" :word-start :w1}
-   { :x 1 :y 0 :letter "o" :word-end :w1}
+  [{ :x 0 :y 0 :letter "f"}
+   { :x 1 :y 0 :letter "o"}
    { :x 0 :y 1 :letter "d"}
    { :x 1 :y 1 :letter "e"}])
 
@@ -123,9 +123,10 @@
           (swap! state
                  (fn [current-state]
                    (let [{:keys [words line-start line-end tiles]} current-state
-                         word {:text (find-word line-start line-end tiles) :at [line-start line-end]}]
+                         word {:text (find-word line-start line-end tiles) :at [line-start line-end]}
+                         reversed-word {:text (reduce str (reverse (:text word))) :at [line-end line-start]}]
                      (println (:words current-state))
-                     (assoc current-state :line-start [] :line-end [] :words (mark-found word words)))))))
+                     (assoc current-state :line-start [] :line-end [] :words (mark-found word (mark-found reversed-word words))))))))
   (set! (.-onmousemove canvas) 
         (fn [event] 
           (swap! state

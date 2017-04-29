@@ -24,8 +24,7 @@
                           (. js/document (getElementById "app")))
 
 ; MODEL
-
-(def words {:w1 {:word "fo" :found? false}})
+(def words [{:text "fo" :at nil}])
 
 (def tiles 
   [{ :x 0 :y 0 :letter "f" :word-start :w1}
@@ -67,20 +66,33 @@
             (let [position-x (:position-x tile)
                   position-y (:position-y tile)
                   tile-size (tile-width tiles)]
-              ; TODO: this is incorrectly finding the start tile
-              (println (and (<= position-x x (+ position-x tile-size)) (<= position-y y (+ position-y tile-size))))
-              (if (and (<= position-x x (+ position-x tile-size)) (<= position-y y (+ position-y tile-size))) (reduced tile) nil))) tiles))
+              (if (and (<= position-x x (+ position-x tile-size)) (<= position-y y (+ position-y tile-size))) (reduced tile) nil))) nil tiles))
 
-(defn find-word [[start-x start-y] [end-x end-y] tiles]
-  "Find word key by positions of start and end of line on board"
-  (let [word-start (:word-start (find-tile start-x start-y tiles))
-        ;word-end (:word-end (find-tile end-x end-y tiles))]
-        word-end nil]
-    ;; TODO: looks like model X Y coordinates may not be properly translating to Board X Y
-    (println (find-tile start-x start-y tiles))
-    (if (= word-start word-end) word-start nil)))
+(defn coordinate-range 
+  [start-coordinate end-coordinate]
+  (cond
+    ; TODO: replace 10 with sqrt total number of tiles
+    (= start-coordinate end-coordinate) (repeat 10 start-coordinate)
+    (> start-coordinate end-coordinate) (range start-coordinate (- end-coordinate 1) -1)
+    :else (range start-coordinate (+ 1 end-coordinate))))
 
-(defn mark-found [word words] words)
+(defn find-word [[board-start-x board-start-y] [board-end-x board-end-y] tiles]
+  "Find word by positions of start and end of line on board"
+  (let [start-tile (find-tile board-start-x board-start-y tiles)
+        end-tile (find-tile board-end-x board-end-y tiles)
+        start-x (:x start-tile)
+        end-x (:x end-tile)
+        start-y (:y start-tile)
+        end-y (:y end-tile)
+        xs (coordinate-range start-x end-x)
+        ys (coordinate-range start-y end-y)]
+    (reduce str 
+            (map (fn [x y] 
+                   (reduce (fn [found-tile tile] 
+                             (if (and (= x (:x tile)) (= y (:y tile))) (reduced (:letter tile)) nil)) nil tiles)) xs ys))))
+
+(defn mark-found [found-word words] 
+  (map (fn [word] (if (= (:text found-word) (:text word)) found-word word)) words))
 
 ; TODO: not sure if this is working (NOT NEEDED MAYBE)
 (defn sort-tiles [tiles]
@@ -101,7 +113,6 @@
                                        letter-x (+ position-x tile-center-offset)
                                        letter-y (+ position-y tile-center-offset)]
                                    (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) tiles)})]
-  (println (:tiles @state))
   (set! (.-onmousedown canvas) 
         (fn [event] 
           (swap! state 
@@ -113,7 +124,8 @@
           (swap! state
                  (fn [current-state]
                    (let [{:keys [words line-start line-end tiles]} current-state
-                         word (find-word line-start line-end tiles)]
+                         word {:text (find-word line-start line-end tiles) :at [line-start line-end]}]
+                     (println (:words current-state))
                      (assoc current-state :line-start [] :line-end [] :words (mark-found word words)))))))
   (set! (.-onmousemove canvas) 
         (fn [event] 

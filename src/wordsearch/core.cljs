@@ -64,7 +64,6 @@
         draw-text-args (concat 
                          (map (fn [{:keys [letter letter-x letter-y]}] [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
                          (map (fn [{:keys [text]} text-y] [context text (+ word-table-padding board-width) text-y word-table-font-size]) words word-table-ys))] 
-    (println word-table-ys)
     (doseq [args draw-text-args] 
       (apply draw-text args)))
   (let [line-start (:line-start state)
@@ -111,46 +110,49 @@
 (defn mark-found [found-word words] 
   (map (fn [word] (if (= (:text found-word) (:text word)) found-word word)) words))
 
-(let [canvas (. js/document (getElementById "board"))
-      context (. canvas getContext "2d")
-      state (atom {:line-start []
-                   :line-end []
-                   :words words
-                   :word-table-width 200 ; TODO: should be adjustable based on board dimensions
-                   :word-table-font-size 25
-                   :tile-font-size 60
-                   ; Add board position and letter position of tiles
-                   :tiles (map (fn [tile [letter-x letter-y]]
-                                 (let [{:keys [x y]} tile
-                                       tile-size (tile-width tiles)
-                                       position-x (* x tile-size)
-                                       position-y (* y tile-size)
-                                       tile-center-offset (/ tile-size 2)
-                                       letter-x (+ position-x tile-center-offset)
-                                       letter-y (+ position-y tile-center-offset)]
-                                   (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) tiles)})]
-  (set! (.-onmousedown canvas) 
-        (fn [event] 
-          (swap! state 
-                (fn [state] 
-                  (let [coordinates (mouse-position canvas event)]
-                    (assoc state :line-start coordinates :line-end coordinates))))))
-  (set! (.-onmouseup canvas)
-        (fn [event]
-          (swap! state
-                 (fn [current-state]
-                   (let [{:keys [words line-start line-end tiles]} current-state
-                         word {:text (find-word line-start line-end tiles) :at [line-start line-end]}
-                         reversed-word {:text (reduce str (reverse (:text word))) :at [line-end line-start]}]
-                     ; TODO: may want to ensure words can only be found if they are horizontal, vertical or diagonal
-                     (assoc current-state :line-start [] :line-end [] :words (mark-found word (mark-found reversed-word words))))))))
-  (set! (.-onmousemove canvas) 
-        (fn [event] 
-          (swap! state
-                 (fn [state] 
-                   (assoc state :line-end (mouse-position canvas event))))
-          (draw canvas context @state)))
-  (draw canvas context @state))
+(defn start []
+  (let [canvas (. js/document (getElementById "board"))
+        context (. canvas getContext "2d")
+        state (atom {:line-start []
+                     :line-end []
+                     :words words
+                     :word-table-width 200 ; TODO: should be adjustable based on board dimensions
+                     :word-table-font-size 25
+                     :tile-font-size 60
+                     ; Add board position and letter position of tiles
+                     :tiles (map (fn [tile [letter-x letter-y]]
+                                   (let [{:keys [x y]} tile
+                                         tile-size (tile-width tiles)
+                                         position-x (* x tile-size)
+                                         position-y (* y tile-size)
+                                         tile-center-offset (/ tile-size 2)
+                                         letter-x (+ position-x tile-center-offset)
+                                         letter-y (+ position-y tile-center-offset)]
+                                     (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) tiles)})]
+    (set! (.-onmousedown canvas) 
+          (fn [event] 
+            (swap! state 
+                  (fn [state] 
+                    (let [coordinates (mouse-position canvas event)]
+                      (assoc state :line-start coordinates :line-end coordinates))))))
+    (set! (.-onmouseup canvas)
+          (fn [event]
+            (swap! state
+                   (fn [current-state]
+                     (let [{:keys [words line-start line-end tiles]} current-state
+                           word {:text (find-word line-start line-end tiles) :at [line-start line-end]}
+                           reversed-word {:text (reduce str (reverse (:text word))) :at [line-end line-start]}]
+                       ; TODO: may want to ensure words can only be found if they are horizontal, vertical or diagonal
+                       (assoc current-state :line-start [] :line-end [] :words (mark-found word (mark-found reversed-word words))))))))
+    (set! (.-onmousemove canvas) 
+          (fn [event] 
+            (swap! state
+                   (fn [state] 
+                     (assoc state :line-end (mouse-position canvas event))))
+            (draw canvas context @state)))
+    (draw canvas context @state)))
+
+(start)
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on

@@ -54,23 +54,31 @@
   (. context (fillText text x y)))
 
 (defn draw [canvas context state] 
-  (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
-  (let [word-table-padding 5
-        word-table-top-offset 50
-        word-table-font-size (:word-table-font-size state)
-        word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count words)) word-table-padding)) word-table-font-size)
-        words (:words state)
-        tile-font-size (:tile-font-size state)
-        draw-text-args (concat 
-                         (map (fn [{:keys [letter letter-x letter-y]}] [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
-                         (map (fn [{:keys [text]} text-y] [context text (+ word-table-padding board-width) text-y word-table-font-size]) words word-table-ys))] 
-    (doseq [args draw-text-args] 
-      (apply draw-text args)))
-  (let [line-start (:line-start state)
-        line-end (:line-end state)
-        lines (concat (if (or (empty? line-start) (empty? line-end)) [] [[line-start line-end]]) (filter some? (map :at (:words state))))] 
-    (doseq [[[from-x from-y] [to-x to-y]] lines] 
-      (draw-line context from-x from-y to-x to-y))))
+  (if (= true (:game-over state))
+    (let [board-center-coordinate (/ board-width 2)
+          message-box-height 100
+          message-box-width 300
+          message-box-x (- board-center-coordinate (/ message-box-width 2))
+          message-box-y (- board-center-coordinate (/ message-box-height 2))]
+      (draw-text context "Play Again?" message-box-x message-box-y 100))
+    (do
+      (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
+      (let [word-table-padding 5
+            word-table-top-offset 50
+            word-table-font-size (:word-table-font-size state)
+            word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count words)) word-table-padding)) word-table-font-size)
+            words (:words state)
+            tile-font-size (:tile-font-size state)
+            draw-text-args (concat 
+                             (map (fn [{:keys [letter letter-x letter-y]}] [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
+                             (map (fn [{:keys [text]} text-y] [context text (+ word-table-padding board-width) text-y word-table-font-size]) words word-table-ys))] 
+        (doseq [args draw-text-args] 
+          (apply draw-text args)))
+      (let [line-start (:line-start state)
+            line-end (:line-end state)
+            lines (concat (if (or (empty? line-start) (empty? line-end)) [] [[line-start line-end]]) (filter some? (map :at (:words state))))] 
+        (doseq [[[from-x from-y] [to-x to-y]] lines] 
+          (draw-line context from-x from-y to-x to-y))))))
 
 (defn mouse-position 
   "get mouse position coordinates on canvas"
@@ -110,10 +118,14 @@
 (defn mark-found [found-word words] 
   (map (fn [word] (if (= (:text found-word) (:text word)) found-word word)) words))
 
+(defn is-game-over [words] 
+  (every? #(-> %1 :at nil? not) words))
+
 (defn start []
   (let [canvas (. js/document (getElementById "board"))
         context (. canvas getContext "2d")
-        state (atom {:line-start []
+        state (atom {:game-over false
+                     :line-start []
                      :line-end []
                      :words words
                      :word-table-width 200 ; TODO: should be adjustable based on board dimensions
@@ -142,9 +154,10 @@
                    (fn [current-state]
                      (let [{:keys [words line-start line-end tiles]} current-state
                            word {:text (find-word line-start line-end tiles) :at [line-start line-end]}
-                           reversed-word {:text (reduce str (reverse (:text word))) :at [line-end line-start]}]
+                           reversed-word {:text (reduce str (reverse (:text word))) :at [line-end line-start]}
+                           words (mark-found word (mark-found reversed-word words))]
                        ; TODO: may want to ensure words can only be found if they are horizontal, vertical or diagonal
-                       (assoc current-state :line-start [] :line-end [] :words (mark-found word (mark-found reversed-word words))))))))
+                       (assoc current-state :line-start [] :line-end [] :game-over (is-game-over words) :words words))))))
     (set! (.-onmousemove canvas) 
           (fn [event] 
             (swap! state

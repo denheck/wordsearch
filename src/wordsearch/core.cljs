@@ -129,6 +129,7 @@
                                          letter-x (+ position-x tile-center-offset)
                                          letter-y (+ position-y tile-center-offset)]
                                      (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) tiles)})]
+    (add-watch state :view-renderer (fn [_key _ref _prev-state new-state] (draw canvas context new-state)))
     (set! (.-onmousedown canvas) 
           (fn [event] 
             (swap! state 
@@ -148,8 +149,7 @@
           (fn [event] 
             (swap! state
                    (fn [state] 
-                     (assoc state :line-end (mouse-position canvas event))))
-            (draw canvas context @state)))
+                     (assoc state :line-end (mouse-position canvas event))))))
     (draw canvas context @state)))
 
 (start)

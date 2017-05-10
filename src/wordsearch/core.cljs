@@ -21,7 +21,8 @@
                           (. js/document (getElementById "app")))
 
 ; MODEL
-(def words [{:text "fez" :at nil}])
+(def words [{:text "fez" :at nil}
+            {:text "foo" :at nil}])
 
 (def tiles 
   [{ :x 0 :y 0 :letter "f"}
@@ -38,6 +39,9 @@
 (def board-width 500)
 
 (defn tile-width [tiles] (/ board-width (. js/Math (sqrt (count tiles)))))
+
+(defn unfound-words [words] 
+  (filter #(-> %1 :at nil?) words))
 
 (defn draw-line [context from-x from-y to-x to-y]
   (. context beginPath)
@@ -64,7 +68,7 @@
             word-table-top-offset 50
             word-table-font-size (:word-table-font-size state)
             word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count words)) word-table-padding)) word-table-font-size)
-            words (:words state)
+            words (unfound-words (:words state))
             tile-font-size (:tile-font-size state)
             draw-text-args (concat 
                              (map (fn [{:keys [letter letter-x letter-y]}] [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
@@ -117,6 +121,7 @@
 
 (defn is-game-over [words] 
   (every? #(-> %1 :at nil? not) words))
+
 
 (defn start []
   (let [canvas (. js/document (getElementById "board"))

@@ -15,9 +15,6 @@
    [:div.App-header
     [:h2 "Welcome to Jub's Wordsearch!"]]
    [:div.App-body
-    [:ul
-     [:li "foobar"]
-     [:li "squanch"]]
     [:table]]])
 
 (reagent/render-component [app]

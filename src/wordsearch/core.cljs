@@ -20,9 +20,64 @@
 (reagent/render-component [app]
                           (. js/document (getElementById "app")))
 
+; TODO: DOES NOT WORK
+(defn fits-in? 
+  "check if all tiles are within the boundaries of the board"
+  [new-tiles tiles num-tiles-wide] 
+  (let [in-range #(some? (some #{%} (range 0 (inc num-tiles-wide))))]
+    (every? true? (mapcat (fn [{:keys [x y]}] [(in-range x) (in-range y)]) new-tiles))))
+
+(defn first-arg [& args] (first args))
+
+(defn get-direction-functions 
+  "get a vector of functions to apply to coordinates based on direction, i.e. :ne == [+ -]"
+  [direction]
+  (get {:n [first-arg -] :ne [+ -] :e [+ first-arg] :se [+ +] :s [first-arg +] :sw [- +] :w [- first-arg] :nw [- -]} direction))
+
+(defn coordinate-range 
+  [start-coordinate end-coordinate]
+  (cond
+    ; TODO: replace 10 with sqrt total number of tiles
+    (= start-coordinate end-coordinate) (repeat 10 start-coordinate)
+    (> start-coordinate end-coordinate) (range start-coordinate (- end-coordinate 1) -1)
+    :else (range start-coordinate (+ 1 end-coordinate))))
+
+(defn generate-tiles [word x y direction greatest-coordinate]
+  "recalculate x and y based on greatest coordinate and generate tiles in direction"
+  (let [direction-functions (get-direction-functions direction)
+        word-length (count word)
+        last-x (apply (first direction-functions) [x word-length])
+        last-y (apply (second direction-functions) [y word-length])
+        xs (coordinate-range x last-x)
+        ys (coordinate-range y last-y)]
+    (map (fn [x y letter] {:x x :y y :letter letter}) xs ys (seq word))))
+
+(defn generate-missing-tiles
+  "fill in the missing tiles for the provided tiles"
+  [tiles num-tiles-wide]
+  (let [coordinates (map (fn [{:keys [x y]}] [x y]) tiles)]
+    (concat 
+      (for [x (range 0 (inc num-tiles-wide))
+            y (range 0 (inc num-tiles-wide))
+            :let [letter (rand-nth (vec "abcdefghijklmnopqrstuvwxyz"))]
+            :when (not (some #{[x y]} coordinates))]
+        {:x x :y y :letter letter}) tiles)))
+
 ; MODEL
-(def words [{:text "fez" :at nil}
-            {:text "foo" :at nil}])
+(defn generate-board [words directions num-tiles-wide] ; TODO: should probably be renamed to something to do with tiles
+  "generate tiles for board based on words"
+  (let [words (->> words (sort count) set)
+        new-tiles (reduce (fn [tiles word] 
+                            (loop [] 
+                              (let [x (rand-int num-tiles-wide) 
+                                    y (rand-int num-tiles-wide) 
+                                    direction (rand-nth directions)
+                                    new-tiles (generate-tiles word x y direction num-tiles-wide)]
+                                (if (fits-in? new-tiles tiles num-tiles-wide) 
+                                  (concat tiles new-tiles)
+                                  (recur))))) [] words)]
+    (generate-missing-tiles new-tiles num-tiles-wide)))
+
 
 (def tiles 
   [{ :x 0 :y 0 :letter "f"}
@@ -67,7 +122,7 @@
       (let [word-table-padding 5
             word-table-top-offset 50
             word-table-font-size (:word-table-font-size state)
-            word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count words)) word-table-padding)) word-table-font-size)
+            word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count (:words state))) word-table-padding)) word-table-font-size)
             words (unfound-words (:words state))
             tile-font-size (:tile-font-size state)
             draw-text-args (concat 
@@ -93,13 +148,6 @@
                   tile-size (tile-width tiles)]
               (if (and (<= position-x x (+ position-x tile-size)) (<= position-y y (+ position-y tile-size))) (reduced tile) nil))) nil tiles))
 
-(defn coordinate-range 
-  [start-coordinate end-coordinate]
-  (cond
-    ; TODO: replace 10 with sqrt total number of tiles
-    (= start-coordinate end-coordinate) (repeat 10 start-coordinate)
-    (> start-coordinate end-coordinate) (range start-coordinate (- end-coordinate 1) -1)
-    :else (range start-coordinate (+ 1 end-coordinate))))
 
 (defn find-word [[board-start-x board-start-y] [board-end-x board-end-y] tiles]
   "Find word by positions of start and end of line on board"
@@ -122,27 +170,28 @@
 (defn is-game-over [words] 
   (every? #(-> %1 :at nil? not) words))
 
-
 (defn start []
   (let [canvas (. js/document (getElementById "board"))
         context (. canvas getContext "2d")
+        words ["foo" "fez"]
+        board-tiles (generate-board words [:n :ne :e :se :s :sw :w :nw] 10)
         state (atom {:game-over false
                      :line-start []
                      :line-end []
-                     :words words
+                     :words [{:text "foo" :at nil} {:text "fez" :at nil}] ; TODO: make DRY
                      :word-table-width 200 ; TODO: should be adjustable based on board dimensions
                      :word-table-font-size 25
                      :tile-font-size 60
                      ; Add board position and letter position of tiles
                      :tiles (map (fn [tile [letter-x letter-y]]
                                    (let [{:keys [x y]} tile
-                                         tile-size (tile-width tiles)
+                                         tile-size (tile-width board-tiles)
                                          position-x (* x tile-size)
                                          position-y (* y tile-size)
                                          tile-center-offset (/ tile-size 2)
                                          letter-x (+ position-x tile-center-offset)
                                          letter-y (+ position-y tile-center-offset)]
-                                     (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) tiles)})]
+                                     (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) board-tiles)})]
     (add-watch state :view-renderer (fn [_key _ref _prev-state new-state] (draw canvas context new-state)))
     (set! (.-onmousedown canvas) 
           (fn [event] 

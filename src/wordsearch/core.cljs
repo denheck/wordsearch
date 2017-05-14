@@ -122,7 +122,9 @@
       (let [word-table-padding 5
             word-table-top-offset 50
             word-table-font-size (:word-table-font-size state)
-            word-table-ys (range word-table-top-offset (+ word-table-top-offset word-table-font-size (* (+ 1 (count (:words state))) word-table-padding)) word-table-font-size)
+            word-count (count (:words state))
+            word-table-bottom (* (+ word-table-top-offset word-table-font-size word-table-padding) (inc word-count))
+            word-table-ys (range word-table-top-offset word-table-bottom word-table-font-size)
             words (unfound-words (:words state))
             tile-font-size (:tile-font-size state)
             draw-text-args (concat 

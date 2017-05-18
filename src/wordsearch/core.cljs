@@ -20,10 +20,9 @@
 (reagent/render-component [app]
                           (. js/document (getElementById "app")))
 
-; TODO: DOES NOT WORK
 (defn fits-in? 
   "check if all tiles are within the boundaries of the board"
-  [new-tiles tiles num-tiles-wide] 
+  [new-tiles num-tiles-wide] 
   (let [in-range #(some? (some #{%} (range 0 (inc num-tiles-wide))))]
     (every? true? (mapcat (fn [{:keys [x y]}] [(in-range x) (in-range y)]) new-tiles))))
 
@@ -63,6 +62,13 @@
             :when (not (some #{[x y]} coordinates))]
         {:x x :y y :letter letter}) tiles)))
 
+(defn overlap?
+  "check if tiles overlap"
+  [new-tiles tiles]
+  (reduce (fn [_ new-tile]
+            (let [tile-overlaps? (some true? (map (fn [tile] (and (= (:x new-tile) (:x tile)) (= (:y new-tile) (:y tile)))) tiles))]
+              (if tile-overlaps? (reduced true) false))) false new-tiles))
+
 ; MODEL
 (defn generate-board [words directions num-tiles-wide] ; TODO: should probably be renamed to something to do with tiles
   "generate tiles for board based on words"
@@ -72,8 +78,9 @@
                               (let [x (rand-int num-tiles-wide) 
                                     y (rand-int num-tiles-wide) 
                                     direction (rand-nth directions)
-                                    new-tiles (generate-tiles word x y direction num-tiles-wide)]
-                                (if (fits-in? new-tiles tiles num-tiles-wide) 
+                                    new-tiles (generate-tiles word x y direction num-tiles-wide)
+                                    overlapping? (overlap? new-tiles tiles)]
+                                (if (and (fits-in? new-tiles num-tiles-wide) (not (overlap? new-tiles tiles)))
                                   (concat tiles new-tiles)
                                   (recur))))) [] words)]
     (generate-missing-tiles new-tiles num-tiles-wide)))

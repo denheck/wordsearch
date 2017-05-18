@@ -186,7 +186,8 @@
         num-tiles-wide 10
         num-words 5
         words (take num-words (filter #(and (> num-tiles-wide (count %)) (nil? (some #{"-"} %))) (map #(-> % :word .toUpperCase) (shuffle word-list))))
-        board-tiles (generate-board words [:n :ne :e :se :s :sw :w :nw] num-tiles-wide )
+        board-tiles (generate-board words [:n :ne :e :se :s :sw :w :nw] num-tiles-wide)
+        tile-size (tile-width board-tiles)
         state (atom {:game-over false
                      :line-start []
                      :line-end []
@@ -197,7 +198,6 @@
                      ; Add board position and letter position of tiles
                      :tiles (map (fn [tile [letter-x letter-y]]
                                    (let [{:keys [x y]} tile
-                                         tile-size (tile-width board-tiles)
                                          position-x (* x tile-size)
                                          position-y (* y tile-size)
                                          tile-center-offset (/ tile-size 2)

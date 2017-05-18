@@ -193,8 +193,8 @@
                      :line-end []
                      :words (map #(assoc {:at nil} :text %) words)
                      :word-table-width 200 
-                     :word-table-font-size 25
-                     :tile-font-size 50
+                     :word-table-font-size 25 ; TODO: can this be the same as tile-font-size
+                     :tile-font-size (.floor js/Math (* tile-size 0.55))
                      ; Add board position and letter position of tiles
                      :tiles (map (fn [tile [letter-x letter-y]]
                                    (let [{:keys [x y]} tile

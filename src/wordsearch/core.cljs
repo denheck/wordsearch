@@ -58,7 +58,7 @@
     (concat 
       (for [x (range 0 (inc num-tiles-wide))
             y (range 0 (inc num-tiles-wide))
-            :let [letter (rand-nth (vec "abcdefghijklmnopqrstuvwxyz"))]
+            :let [letter (rand-nth (vec "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))]
             :when (not (some #{[x y]} coordinates))]
         {:x x :y y :letter letter}) tiles)))
 
@@ -113,7 +113,7 @@
   (. context stroke))
 
 (defn draw-text [context text x y font-size]
-  (set! (.-font context) (str font-size "px serif"))
+  (set! (.-font context) (str font-size "px Monaco"))
   (. context (fillText text x y)))
 
 (defn draw [canvas context state] 
@@ -185,7 +185,7 @@
         word-list [{:id 476561, :word "Albacete"} {:id 76770, :word "Bethesda"} {:id 557047, :word "Osteichthyes"} {:id 192944, :word "Sabbatine"} {:id 635226, :word "Sabra"} {:id 487861, :word "Thisbe"} {:id 1708970, :word "Wadayama"} {:id 238365, :word "accusatives"} {:id 1239, :word "acetin"} {:id 238735, :word "addends"} {:id 2614, :word "advantageable"} {:id 7245, :word "animalize"} {:id 7407, :word "annihilative"} {:id 242532, :word "appertained"} {:id 12904, :word "autor"} {:id 500934, :word "baby-eyes"} {:id 2633879, :word "backtalkers"} {:id 3834848, :word "bake-offs"} {:id 245052, :word "balancers"} {:id 14598, :word "baptise"} {:id 95567, :word "barroom"} {:id 16449, :word "behest"} {:id 18140, :word "bindweed"} {:id 27315, :word "casemated"} {:id 253299, :word "catheterized"} {:id 253583, :word "cellulars"} {:id 1975983, :word "changeset"} {:id 30995, :word "chieve"} {:id 84261, :word "circumstances"} {:id 34288, :word "cloud-born"} {:id 41246, :word "crambe"} {:id 260659, :word "cremini"} {:id 2096877, :word "cruise-control"} {:id 31256992, :word "cybercultural"} {:id 261852, :word "cyberspaces"} {:id 2059763, :word "destigmatization"} {:id 51237, :word "dissertation"} {:id 52710, :word "doubter"} {:id 361332, :word "drenche"} {:id 762567, :word "dretful"} {:id 55296, :word "edition"} {:id 271069, :word "enwombed"} {:id 27449088, :word "ethnoarchaeological"} {:id 1330943, :word "gamahuche"} {:id 284947, :word "hoses"} {:id 70473, :word "humiliation"} {:id 114662, :word "ichthyological"} {:id 286376, :word "illogic"} {:id 720195, :word "inanimates"} {:id 9650616, :word "inlarging"} {:id 520818, :word "intubator"} {:id 120350, :word "jewellery"} {:id 93533, :word "jocundity"} {:id 121151, :word "kalan"} {:id 293267, :word "leechlike"} {:id 124910, :word "leming"} {:id 9618263, :word "lengthenings"} {:id 294401, :word "literarily"} {:id 297288, :word "mediatized"} {:id 3380010, :word "meeted"} {:id 138773, :word "natatory"} {:id 81636, :word "nauseating"} {:id 302837, :word "necromancers"} {:id 14771288, :word "noncorrupt"} {:id 92076, :word "oarsman"} {:id 88936, :word "overhauling"} {:id 1863130, :word "phonecards"} {:id 533800, :word "photo-engraver"} {:id 314978, :word "plebes"} {:id 83566, :word "plethora"} {:id 316134, :word "positing"} {:id 1418817, :word "resourcing"} {:id 191730, :word "root-house"} {:id 563342, :word "roten"} {:id 196329, :word "scourage"} {:id 1833083, :word "scriptability"} {:id 472832, :word "self-tolerance"} {:id 198123, :word "self-torture"} {:id 558974, :word "sheitel"} {:id 205964, :word "spikenard"} {:id 373905, :word "split-tail"} {:id 337621, :word "stickier"} {:id 339785, :word "sunbathed"} {:id 701612, :word "textfile"} {:id 544187, :word "thumb-print"} {:id 9292431, :word "timeslice"} {:id 723557, :word "transcriptome"} {:id 219981, :word "transitionally"} {:id 1854361, :word "tropical-storm"} {:id 2023583, :word "tuna-fish"} {:id 2640980, :word "unbloated"} {:id 1605484, :word "undiscounted"} {:id 349229, :word "unnervingly"} {:id 225987, :word "unrecovered"} {:id 349582, :word "unslings"} {:id 351810, :word "visitors"} {:id 352721, :word "washermen"} {:id 232045, :word "wharves"} {:id 1710758, :word "will-o"} {:id 377693, :word "woolhead"}]
         num-tiles-wide 10
         num-words 5
-        words (take num-words (filter #(and (> num-tiles-wide (count %)) (nil? (some #{"-"} %))) (map #(-> % :word .toLowerCase) (shuffle word-list))))
+        words (take num-words (filter #(and (> num-tiles-wide (count %)) (nil? (some #{"-"} %))) (map #(-> % :word .toUpperCase) (shuffle word-list))))
         board-tiles (generate-board words [:n :ne :e :se :s :sw :w :nw] num-tiles-wide )
         state (atom {:game-over false
                      :line-start []
@@ -193,7 +193,7 @@
                      :words (map #(assoc {:at nil} :text %) words)
                      :word-table-width 200 
                      :word-table-font-size 25
-                     :tile-font-size 60
+                     :tile-font-size 50
                      ; Add board position and letter position of tiles
                      :tiles (map (fn [tile [letter-x letter-y]]
                                    (let [{:keys [x y]} tile

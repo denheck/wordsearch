@@ -96,6 +96,7 @@
 (defn draw-line [context from-x from-y to-x to-y]
   (. context beginPath)
   (set! (.-strokeStyle context) "black")
+  (set! (.-lineWidth context) 5)
   (. context (moveTo from-x from-y))
   (. context (lineTo to-x to-y))
   (. context stroke))

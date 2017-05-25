@@ -39,4 +39,8 @@ body {
 .pressed-grid-item {
         background-color: #ccc;
 }
+
+#canvas-parent {
+        text-align: center;
+}
   

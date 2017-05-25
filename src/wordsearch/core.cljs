@@ -85,18 +85,6 @@
                                   (recur))))) [] words)]
     (generate-missing-tiles new-tiles num-tiles-wide)))
 
-
-(def tiles 
-  [{ :x 0 :y 0 :letter "f"}
-   { :x 1 :y 0 :letter "o"}
-   { :x 2 :y 0 :letter "o"}
-   { :x 0 :y 1 :letter "d"}
-   { :x 1 :y 1 :letter "e"}
-   { :x 2 :y 1 :letter "x"}
-   { :x 0 :y 2 :letter "t"}
-   { :x 1 :y 2 :letter "f"}
-   { :x 2 :y 2 :letter "z"}])
-
 ; VIEW
 (def board-width 500)
 

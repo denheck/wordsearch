@@ -12,8 +12,7 @@
 
 (defn app []
   [:div.App
-   [:div.App-header
-    [:h2 "Welcome to Jub's Wordsearch!"]]
+   [:div.App-header]
    [:div.App-body
     [:table]]])
 
@@ -114,7 +113,7 @@
           message-box-width 300
           message-box-x (- board-center-coordinate (/ message-box-width 2))
           message-box-y (- board-center-coordinate (/ message-box-height 2))]
-      (draw-text context "Play Again?" message-box-x message-box-y 100))
+      (draw-text context "Play Again?" message-box-x message-box-y 50))
     (do
       (. context (clearRect 0 0 (.-width canvas) (.-height canvas)))
       (let [word-table-padding 5

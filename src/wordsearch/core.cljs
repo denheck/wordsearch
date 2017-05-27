@@ -199,6 +199,7 @@
                                          letter-y (+ position-y tile-center-offset)]
                                      (assoc tile :letter-x letter-x :letter-y letter-y :position-x position-x :position-y position-y))) board-tiles)})]
     (add-watch state :view-renderer (fn [_key _ref _prev-state new-state] (draw canvas context new-state)))
+    (set! (.-onclick (.getElementById js/document "new-board")) #(.reload js/location))
     (set! (.-onmousedown canvas) 
           (fn [event] 
             (swap! state 

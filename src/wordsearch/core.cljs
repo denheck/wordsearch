@@ -90,8 +90,9 @@
 
 (defn tile-width [tiles] (/ board-width (. js/Math (sqrt (count tiles)))))
 
-(defn unfound-words [words] 
-  (filter #(-> %1 :at nil?) words))
+(defn unfound-word 
+  [word]
+  (nil? (:at word)))
 
 (defn draw-line [context from-x from-y to-x to-y]
   (. context beginPath)
@@ -101,8 +102,9 @@
   (. context (lineTo to-x to-y))
   (. context stroke))
 
-(defn draw-text [context text x y font-size]
+(defn draw-text [context text x y font-size & {:keys [color] :or {color "#000000"}}]
   (set! (.-font context) (str font-size "px Monaco"))
+  (set! (.-fillStyle context) color)
   (. context (fillText text x y)))
 
 (defn draw [canvas context state] 
@@ -121,11 +123,15 @@
             word-count (count (:words state))
             word-table-bottom (* (+ word-table-top-offset word-table-font-size word-table-padding) (inc word-count))
             word-table-ys (range word-table-top-offset word-table-bottom word-table-font-size)
-            words (unfound-words (:words state))
+            words (:words state)
             tile-font-size (:tile-font-size state)
             draw-text-args (concat 
-                             (map (fn [{:keys [letter letter-x letter-y]}] [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
-                             (map (fn [{:keys [text]} text-y] [context text (+ word-table-padding board-width) text-y word-table-font-size]) words word-table-ys))] 
+                             (map (fn [{:keys [letter letter-x letter-y]}] 
+                                    [context letter (- letter-x (/ tile-font-size 4)) (+ letter-y (/ tile-font-size 4)) tile-font-size]) (:tiles state))
+                             (map (fn [{:keys [text] :as word} text-y] 
+                                    (concat 
+                                      [context text (+ word-table-padding board-width) text-y word-table-font-size] 
+                                      (if (unfound-word word) [] [:color "#EEEEEE"]))) words word-table-ys))] 
         (doseq [args draw-text-args] 
           (apply draw-text args)))
       (let [line-start (:line-start state)

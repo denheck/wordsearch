@@ -2,22 +2,7 @@
   (:require [reagent.core :as reagent :refer [atom]]))
 
 (enable-console-print!)
-
-;(println "This text is printed from src/wordsearch/core.cljs. Go ahead and edit it and see reloading in action.")
-
-;; define your app data so that it doesn't get over-written on reload
-
-(defonce app-state 
-  (atom { :title "Hello World" }))
-
-(defn app []
-  [:div.App
-   [:div.App-header]
-   [:div.App-body
-    [:table]]])
-
-(reagent/render-component [app]
-                          (. js/document (getElementById "app")))
+(reagent/render-component [:div] (. js/document (getElementById "app")))
 
 (defn fits-in? 
   "check if all tiles are within the boundaries of the board"
